@@ -1,0 +1,9 @@
+# Paystack checkout
+
+The Student Full Report button opens Paystack Inline for GHS 29 (2,900 pesewas); Counselor Starter and Pro use GHS 400 and GHS 900 respectively. The supplied test key has a duplicated `pk_test_` prefix; checkout removes that duplicate before sending it to Paystack. Add `VITE_PAYSTACK_PUBLIC_KEY` to the Vercel project environment as well as `.env`, then redeploy; `.env` is gitignored. Availability of individual mobile-money networks depends on the merchant's Paystack configuration.
+
+Every active student, counselor and partner Paystack callback invokes the deployed Supabase Edge Function `verify-paystack` with its reference, email, plan, amount, user ID, partner ID and credit count. The client unlocks access or refreshes a wallet only when the function returns `verified: true`. Apply `supabase/verify_paystack_hardening.sql` after the institution schema to remove the earlier direct client-write policies and allow authenticated users to read their own payment history.
+
+The deployed Edge Function must verify the Paystack reference, amount, currency, plan and account server-side. Partner top-ups must be credited and recorded atomically and idempotently by reference before it returns success. The function must accept guest verification if guest checkout is enabled. Test references begin with `nyansa_test_` and unlock labelled test previews only. Never expose Paystack or Supabase service-role secrets in Vite variables or browser code.
+
+If verification fails, the UI keeps the reference for retry and does not unlock access or update credits. Device-stored student/counselor references are rechecked with the Edge Function before restoring access. Existing server-verified legacy purchases remain available. The Edge Function must be idempotent because verification can be retried.
